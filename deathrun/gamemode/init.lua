@@ -28,6 +28,7 @@ local uammo = CreateConVar( "dr_unlimited_ammo", "1", FCVAR_ARCHIVE )
 local pickup = CreateConVar( "dr_allow_death_pickup", "0", FCVAR_ARCHIVE )
 local falldamage = CreateConVar( "dr_realistic_fall_damage", "1", FCVAR_ARCHIVE )
 local push = CreateConVar( "dr_push_collide", "0", FCVAR_ARCHIVE )
+local usedefaultrtv = CreateConVar( "dr_default_vote", "1", FCVAR_ARCHIVE )
 
 util.AddNetworkString( "Deathrun_Func" )
 local meta = FindMetaTable( "Player" )
@@ -176,13 +177,13 @@ end
 
 function GM:ConVarThink()
 	for k, v in pairs( callbacks ) do
-		local s = GetConVarString( k )
+		local s = GetConVar( k ):GetString()
 		if not callbackv[k] then
 			callbackv[k] = s
 			continue
 		else
 			local ov = callbackv[k]
-			if ov != s then
+			if ov ~= s then
 				v( k, ov, s )
 				callbackv[k] = s
 			end
@@ -257,7 +258,7 @@ function GM:PlayerCanPickupWeapon( ply, wep )
 
 	if ply:HasWeapon( wep:GetClass() ) then return false end
 	if ply:Team() == TEAM_DEATH then
-		if wep:GetClass() != "weapon_crowbar" and pickup:GetInt() == 0 then
+		if wep:GetClass() ~= "weapon_crowbar" and pickup:GetInt() == 0 then
 			return false
 		end
 	end
@@ -274,7 +275,7 @@ function GM:PlayerCanPickupWeapon( ply, wep )
 		wep.JCanPickup = nil
 	end
 
-	if wep.Primary and wep.Primary.Ammo and wep.Primary.Ammo != "none" then
+	if wep.Primary and wep.Primary.Ammo and wep.Primary.Ammo ~= "none" then
 		ply:GiveAmmo( 1000000, wep.Primary.Ammo, true )
 	end
 
@@ -384,12 +385,12 @@ function GM:DoPlayerDeath( ply, attacker, cinfo )
 		end
 	end
 
-	if num == 1 and IsValid(last) and self:GetRoundTime() < ( GetConVarNumber("dr_roundtime_seconds") - 20 ) then
+	if num == 1 and IsValid(last) and self:GetRoundTime() < ( GetConVar("dr_roundtime_seconds"):GetInt() - 20 ) then
 		local t = last:Team()
 		timer.Simple( 1, function()
 			if not IsValid(last) then return end
 			if not last:Alive() then return end
-			if last:Team() != t then return end
+			if last:Team() ~= t then return end
 			last:Kill()
 			PrintMessage( 3, last:Nick().." has been killed for being AFK as the last member of the "..team.GetName(t).." team." )
 		end )
@@ -476,44 +477,26 @@ local SpecFuncs = {
 
 	end,
 
-	[IN_RELOAD] = function( ply )
+	[IN_JUMP] = function( ply )
+
+		if ply:GetMoveType() ~= MOVETYPE_NOCLIP then
+			ply:SetMoveType(MOVETYPE_NOCLIP)
+		end
 
 		local targ = ply:GetObserverTarget()
 		if not IsValid(targ) or not targ:IsPlayer() then return end
 
-		if not ply._smode or ply._smode == OBS_MODE_CHASE then
+		if not ply._smode or ply._smode == OBS_MODE_ROAMING then
 			ply._smode = OBS_MODE_IN_EYE
 		elseif ply._smode == OBS_MODE_IN_EYE then
 			ply._smode = OBS_MODE_CHASE
+		elseif ply._smode == OBS_MODE_CHASE then
+			ply._smode = OBS_MODE_ROAMING
 		end
 
 		ply:Spectate( ply._smode )
 
 	end,
-
-	[IN_JUMP] = function( ply )
-
-		if ply:GetMoveType() != MOVETYPE_NOCLIP then
-			ply:SetMoveType(MOVETYPE_NOCLIP)
-		end
-
-	end,
-
-	[IN_DUCK] = function( ply )
-
-		local pos = ply:GetPos()
-		local targ = ply:GetObserverTarget()
-
-		if IsValid(targ) and targ:IsPlayer() then
-			pos = targ:EyePos()
-		end
-
-		ply:Spectate(OBS_MODE_ROAMING)
-		ply:SpectateEntity(nil)
-
-		ply:SetPos(pos)
-
-	end
 
 }
 
@@ -606,17 +589,31 @@ function GM:PlayerDeathThink( ply )
 	return false
 end
 
+local NextTick = 0
 function GM:Think()
 	self.BaseClass:Think()
 	self:RoundThink()
 	self:ConVarThink()
+
+	local time = CurTime()
+	if NextTick <= time then
+		NextTick = time + 1
+
+		for _, ply in ipairs(player.GetAll()) do
+			if ply:IsValid() and ply:IsAlive() and ply:Team() ~= TEAM_SPECTATOR then
+				if not ply:HasWeapon("weapon_crowbar") then
+					ply:Give("weapon_crowbar")
+				end
+			end
+		end
+	end
 end
 
 function GM:PlayerSay( ply, text )
 
 	local text2 = string.lower(text)
-	if text2 == "timeleft" then
-		ply:PrintMessage(3, tostring(GetGlobalInt("dr_rounds_left")).." rounds before the map changes.")
+	if text2 == "!timeleft" then
+		PrintMessage(3, tostring(GetGlobalInt("dr_rounds_left")).." rounds before the map changes.")
 		return ""
 	end
 

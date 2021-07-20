@@ -71,7 +71,7 @@ function RTV.ChangeMap( map )
 
 	hook.Add( "OnRoundSet", "RTV - Change Map", function( r )
 
-		if r != ROUND_PREPARING then return end
+		if r ~= ROUND_PREPARING then return end
 
 		RunConsoleCommand( "gamemode", GAMEMODE.FolderName )
 		RunConsoleCommand( "changelevel", map )

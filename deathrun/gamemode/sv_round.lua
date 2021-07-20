@@ -17,9 +17,9 @@ CreateConVar( "dr_death_max", 6, FCVAR_ARCHIVE )
 
 function GM:DoWeNeedDeath()
 
-	local rate = math.Clamp( GetConVarNumber( "dr_death_rate" ), 0.1, 0.9 )
+	local rate = math.Clamp( GetConVar( "dr_death_rate" ):GetFloat(), 0.1, 0.9 )
 	local plys = #player.GetAll()
-	local md = math.max( GetConVarNumber("dr_death_max"), 2 )
+	local md = math.max( GetConVar("dr_death_max"):GetInt(), 2 )
 
 	local num = #team.GetPlayers(TEAM_DEATH)
 	local need = math.floor(math.Clamp( plys * rate, 1, md ))
@@ -78,56 +78,47 @@ local RTVoted = false
 local ShowRounds = CreateConVar( "dr_notify_rounds_left", "1", FCVAR_ARCHIVE )
 
 GM.RoundFunctions = {
-	
-	[ROUND_WAITING] = function( gm )
+	[ROUND_WAITING] = function()
 
-		gm:NotifyAll( "Not enough players!" )
-		gm:SetRoundTime( 0 )
+		GAMEMODE:NotifyAll( "Not enough players!" )
+		GAMEMODE:SetRoundTime( 0 )
 
 	end,
-
-	[ROUND_PREPARING] = function( gm )
-
+	[ROUND_PREPARING] = function()
 		game.CleanUpMap()
 
-		gm:SetRoundTime( 5 )
-		gm:SortPlayers( true )
+		GAMEMODE:SetRoundTime( 5 )
+		GAMEMODE:SortPlayers( true )
 
 		local rounds = math.max(GetGlobalInt( "dr_rounds_left", 1 ), 0)
 		if rounds > 0 and ShowRounds:GetInt() == 1 then
-			gm:NotifyAll( "The map will change in "..rounds.." rounds." )
+			GAMEMODE:NotifyAll( "The map will change in "..rounds.." rounds." )
 		end
-
 	end,
-
-	[ROUND_ACTIVE] = function( gm )
-
-		gm:SetRoundTime( GetConVarNumber( "dr_roundtime_seconds" ) or 300 )
+	[ROUND_ACTIVE] = function()
+		GAMEMODE:SetRoundTime( GetConVar( "dr_roundtime_seconds" ):GetInt() or 300 )
 		for k, v in pairs( player.GetAll() ) do
 			v:Freeze(false)
-			gm:PlayerLoadout( v )
+			GAMEMODE:PlayerLoadout( v )
 		end
 
-		gm:NotifyAll( "The round has started!" )
-
+		GAMEMODE:NotifyAll( "The round has started!" )
 	end,
+	[ROUND_ENDING] = function(winner)
+		GAMEMODE:SetRoundTime( 5 )
 
-	[ROUND_ENDING] = function( gm, winner )
-
-		gm:SetRoundTime( 5 )
-
-		gm:NotifyAll( winner == 123 and "Time is up!" or team.GetName(winner).."s have won!" )
+		GAMEMODE:NotifyAll( winner == 123 and "Time is up!" or team.GetName(winner).."s have won!" )
 
 		local rounds = math.max(GetGlobalInt( "dr_rounds_left", 1 ) - 1, 0)
 		SetGlobalInt( "dr_rounds_left", rounds )
 
-		if rounds <= 1 and not RTVoted then
+		if rounds <= 1 and not RTVoted and GetConVar("dr_default_vote"):GetBool() then
 			RTV.Start()
 			RTVoted = true
 		end
 
+		hook.Run("OnRoundEnd", rounds) -- rounds left
 	end,
-
 }
 
 function GM:SetRound( round, ... )
@@ -137,7 +128,7 @@ function GM:SetRound( round, ... )
 	local args = {...}
 
 	SetGlobalInt( "Deathrun_RoundPhase", round )
-	self.RoundFunctions[round]( self, unpack(args) )
+	self.RoundFunctions[round]( unpack(args) )
 
 	hook.Call( "OnRoundSet", self, round, unpack(args) )
 
@@ -164,36 +155,36 @@ local HasDoneCheck = false
 
 GM.ThinkRoundFunctions = {
 
-	[ROUND_WAITING] = function( gm )
+	[ROUND_WAITING] = function()
 
 		if #player.GetAll() < minplayers:GetInt() then return end
 
-		gm:SetRound( ROUND_PREPARING )
+		GAMEMODE:SetRound( ROUND_PREPARING )
 
 	end,
 
-	[ROUND_PREPARING] = function( gm )
+	[ROUND_PREPARING] = function()
 
-		if gm:GetRoundTime() <= 0 then
-			gm:SetRound( ROUND_ACTIVE )
+		if GAMEMODE:GetRoundTime() <= 0 then
+			GAMEMODE:SetRound( ROUND_ACTIVE )
 		end
 
 	end,
 
-	[ROUND_ACTIVE] = function( gm )
+	[ROUND_ACTIVE] = function()
 
-		local time = gm:GetRoundTime()
+		local time = GAMEMODE:GetRoundTime()
 
 		if time <= 0 then
-			gm:SetRound( ROUND_ENDING, 123 )
+			GAMEMODE:SetRound( ROUND_ENDING, 123 )
 			return
-		elseif not HasDoneCheck and time <= GetConVarNumber( "dr_roundtime_seconds" )*0.5 then
+		elseif not HasDoneCheck and time <= GetConVar( "dr_roundtime_seconds" ):GetInt() * 0.5 then
 			HasDoneCheck = true
-			for k, v in pairs( player.GetAll() ) do
-				if v:Alive() and not v._HasPressedKey then
-					v._HasPressedKey = true
-					v:Kill()
-					PrintMessage( HUD_PRINTTALK, "Automatically killed "..v:Nick().." for being AFK." )
+			for _, ply in pairs( player.GetAll() ) do
+				if ply:Alive() and not ply._HasPressedKey then
+					ply._HasPressedKey = true
+					ply:Kill()
+					PrintMessage( HUD_PRINTTALK, "Automatically killed " .. ply:Nick() .. " for being AFK." )
 				end
 			end
 		end
@@ -202,17 +193,17 @@ GM.ThinkRoundFunctions = {
 		local numb = #GetAlivePlayersFromTeam( TEAM_DEATH )
 
 		if numa == 0 then
-			gm:SetRound( ROUND_ENDING, TEAM_DEATH )
+			GAMEMODE:SetRound( ROUND_ENDING, TEAM_DEATH )
 		elseif numb == 0 then
-			gm:SetRound( ROUND_ENDING, TEAM_RUNNER )
+			GAMEMODE:SetRound( ROUND_ENDING, TEAM_RUNNER )
 		end		
 
 	end,
 
-	[ROUND_ENDING] = function( gm )
+	[ROUND_ENDING] = function()
 
-		if gm:GetRoundTime() <= 0 then
-			gm:SetRound( ROUND_PREPARING )
+		if GAMEMODE:GetRoundTime() <= 0 then
+			GAMEMODE:SetRound( ROUND_PREPARING )
 			return
 		end
 
@@ -223,7 +214,7 @@ GM.ThinkRoundFunctions = {
 function GM:RoundThink()
 	local cur = self:GetRound()
 
-	if cur != ROUND_WAITING then
+	if cur ~= ROUND_WAITING then
 		if #player.GetAll() < 2 then
 			self:SetRound(ROUND_WAITING)
 			return
@@ -231,6 +222,6 @@ function GM:RoundThink()
 	end
 
 	if self.ThinkRoundFunctions[cur] then
-		self.ThinkRoundFunctions[cur]( self )
+		self.ThinkRoundFunctions[cur]()
 	end
 end

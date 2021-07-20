@@ -36,7 +36,7 @@ end
 
 hook.Add( "OnRoundSet", "Load Weapons", function( round )
 
-	if round != ROUND_ACTIVE then return end
+	if round ~= ROUND_ACTIVE then return end
 
 	LoadWeapons()
 

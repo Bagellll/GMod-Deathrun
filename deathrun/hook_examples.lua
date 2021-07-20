@@ -14,7 +14,7 @@ if SERVER then
 			print( "Let's play!" )
 		elseif round == ROUND_ENDING then
 			print( "The winner is "..winner.."!" ) -- If the winner is the timelimit, it will be the number 123.
-			if winner != 123 then
+			if winner ~= 123 then
 				print( team.GetName(winner).." is awesome!" )
 			end
 		end

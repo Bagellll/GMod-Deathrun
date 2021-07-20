@@ -17,7 +17,7 @@ include( "rtv/cl_rtv.lua" )
 
 if SERVER then return end
 
-local name = "Dragon Dildo"
+local name = "Tax Fraud"
 
 language.Add( "trigger_hurt", name )
 language.Add( "env_explosion", name )
@@ -175,9 +175,9 @@ local bhstop = 0xFFFF - IN_JUMP
 local band = bit.band
 
 function GM:CreateMove( uc )
-	if GetGlobalInt("dr_allow_autojump") != 1 then return end
+	if GetGlobalInt("dr_allow_autojump") ~= 1 then return end
 	local lp = LocalPlayer()
-	if GetConVarNumber( "deathrun_autojump" ) == 1 and lp:WaterLevel() < 3 and lp:Alive() and lp:GetMoveType() == MOVETYPE_WALK then
+	if GetConVar( "deathrun_autojump" ):GetBool() and lp:WaterLevel() < 3 and lp:Alive() and lp:GetMoveType() == MOVETYPE_WALK then
 		if not lp:InVehicle() and ( band(uc:GetButtons(), IN_JUMP) ) > 0 then
 			if lp:IsOnGround() then
 				uc:SetButtons( uc:GetButtons() or IN_JUMP )
@@ -228,10 +228,10 @@ local function CreateNumButton( convar, fr, title, tooltip, posx, posy, Cvar, wa
 	local icon = vgui.Create( "DImage", btn )
 	icon:SetSize( 16, 16 )
 	icon:SetPos( btn:GetWide() - 20, btn:GetTall()/2 - icon:GetTall()/2 )
-	icon:SetImage( GetIcon( GetConVarString(convar) ) )
+	icon:SetImage( GetIcon( GetConVar(convar):GetString() ) )
 
 	btn.UpdateIcon = function()
-		icon:SetImage( GetIcon( GetConVarString(convar) ) )
+		icon:SetImage( GetIcon( GetConVar(convar):GetString() ) )
 	end
 
 	surface.SetFont( "Deathrun_Smooth" )
@@ -249,14 +249,14 @@ local function CreateNumButton( convar, fr, title, tooltip, posx, posy, Cvar, wa
 
 			if not lv then
 				lv = c
-				local change = c != wantCvar
+				local change = c ~= wantCvar
 
 				icon:SetImage( GetIcon( change and "0" or "1" ) )
 				btn:SetDisabled( change )
 				disabled = change
-			elseif lv != c then
+			elseif lv ~= c then
 				lv = c
-				local change = c != wantCvar
+				local change = c ~= wantCvar
 
 				icon:SetImage( GetIcon( change and "0" or "1" ) )
 				btn:SetDisabled( change )
@@ -273,7 +273,7 @@ local function CreateNumButton( convar, fr, title, tooltip, posx, posy, Cvar, wa
 
 	end
 	btn.DoClick = function()
-		local cv = GetConVarString(convar)
+		local cv = GetConVar(convar):GetString()
 		cv = cv == "1" and "0" or "1"
 		RunConsoleCommand(convar, cv )
 		icon:SetImage( GetIcon(cv) )		
@@ -371,7 +371,7 @@ local function PlayerList()
 			surface.SetDrawColor( v._ListColor and Color( 45, 55, 65, 200 ) or Color( 65, 75, 85, 200 ) )
 			surface.DrawRect( 0, 0, w, h )
 			draw.AAText( v:Nick(), "Deathrun_Smooth", 2 + 16 + 5, h/2 - tH/2, Color(255,255,255,255) )
-			if not moved and w != 0 then
+			if not moved and w ~= 0 then
 				icon:SetPos( ply:GetWide() - 20, ply:GetTall()/2 - icon:GetTall()/2 )
 			end
 		end

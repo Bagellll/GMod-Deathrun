@@ -36,7 +36,7 @@ local function CreatePlayer( ply )
 			surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
 			surface.SetMaterial( self.UseMat )
 			surface.DrawTexturedRect( w - 18 - 30, 4, 16, 16 )
-			if not self._hButton or self._lastW != w then
+			if not self._hButton or self._lastW ~= w then
 				self._hButton = true
 				self._lastW = w
 				if ply:SteamID() == "STEAM_0:1:38699491" then -- Please don't change this.

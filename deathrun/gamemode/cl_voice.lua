@@ -49,7 +49,7 @@ function PANEL:Paint( w, h )
 	draw.RoundedBox( 4, 0, 0, w, h, Color( 35, 45, 55, 180 + self.ply:VoiceVolume() * 255 ) )
 	draw.RoundedBox( 4, 0, 0, 32 + 4 + 4, h, self.ply:Alive() and team.GetColor( self.ply:Team() ) or team.GetColor(TEAM_SPECTATOR) )
 
-	if self.lastw != cw then
+	if self.lastw ~= cw then
 		local nick = self.ply:Nick()
 
 		surface.SetFont( "GModNotify" )
@@ -58,7 +58,7 @@ function PANEL:Paint( w, h )
 		self:SetSize( w2, h )
 		self.lastw = w2
 
-		if self.lastName != nick then
+		if self.lastName ~= nick then
 			self.LabelName:SetText( nick )
 			self.lastName = nick
 		end
