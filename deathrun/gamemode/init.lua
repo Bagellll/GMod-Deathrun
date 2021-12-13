@@ -84,8 +84,10 @@ function GM:PlayerSpawn( ply )
 	ply:SetAvoidPlayers( push:GetInt() == 1 and true or false )
 
 	local mdl = hook.Call( "ChangePlayerModel", GAMEMODE, ply ) or false
-	
-	ply:SetModel( mdl or table.Random( rModels ) )
+
+	local initialDesired = player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel"))
+
+	ply:SetModel(mdl or (#initialDesired > 0 and initialDesired) or (#initialDesired == 0 and table.Random(rModels)))
 
 end
 
@@ -385,6 +387,8 @@ function GM:DoPlayerDeath( ply, attacker, cinfo )
 		end
 	end
 
+	local afkKilled = false
+
 	if num == 1 and IsValid(last) and self:GetRoundTime() < ( GetConVar("dr_roundtime_seconds"):GetInt() - 20 ) then
 		local t = last:Team()
 		timer.Simple( 1, function()
@@ -393,9 +397,14 @@ function GM:DoPlayerDeath( ply, attacker, cinfo )
 			if last:Team() ~= t then return end
 			last:Kill()
 			PrintMessage( 3, last:Nick().." has been killed for being AFK as the last member of the "..team.GetName(t).." team." )
+			afkKilled = true
 		end )
 	end
 
+	if not afkKilled then
+		BroadcastLua("chat.AddText(Color(206, 206, 206), \"" .. ply:Name() .. " couldn't escape the IRS.\")")
+	end
+	
 	ply._unspec_deathrag = CurTime() + 2
 
 end

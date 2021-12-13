@@ -501,6 +501,8 @@ end
 
 
 if CLIENT then
+	CreateClientConVar( "deathrun_thirdperson_enabled", 0, false, false )
+
 	local scopedirt = surface.GetTextureID( "sprites/scope_arc.vtf" )
 	local scoperadius = ScrH()/2 - 50
 

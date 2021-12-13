@@ -222,19 +222,18 @@ function RTV.CanVote( ply )
 	end
 
 	return true
-
 end
 
 function RTV.StartVote( ply )
 
-	local can, err = RTV.CanVote(ply)
+	--[[local can, err = RTV.CanVote(ply)
 
 	if not can then
 		ply:Notify( err )
 		return
 	end
 
-	RTV.AddVote( ply )
+	RTV.AddVote( ply )]]
 
 end
 
