@@ -85,10 +85,13 @@ function GM:PlayerSpawn( ply )
 
 	local mdl = hook.Call( "ChangePlayerModel", GAMEMODE, ply ) or false
 
-	local initialDesired = player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel"))
 
-	ply:SetModel(mdl or (#initialDesired > 0 and initialDesired) or (#initialDesired == 0 and table.Random(rModels)))
-
+	if not ply:IsBot() then
+		local initialDesired = player_manager.TranslatePlayerModel(ply:GetInfo("cl_playermodel"))
+		ply:SetModel(mdl or (#initialDesired > 0 and initialDesired) or (#initialDesired == 0 and table.Random(rModels)))
+	else
+		ply:SetModel(table.Random(rModels))
+	end
 end
 
 function GM:PlayerSetHandsModel( ply, ent )
@@ -605,11 +608,11 @@ function GM:Think()
 	self:ConVarThink()
 
 	local time = CurTime()
-	if NextTick <= time then
+	if NextTick <= time and player.GetCount() > 1 then
 		NextTick = time + 1
 
 		for _, ply in ipairs(player.GetAll()) do
-			if ply:IsValid() and ply:IsAlive() and ply:Team() ~= TEAM_SPECTATOR then
+			if ply:IsValid() and ply:Alive() and ply:Team() ~= TEAM_SPECTATOR then
 				if not ply:HasWeapon("weapon_crowbar") then
 					ply:Give("weapon_crowbar")
 				end
