@@ -113,11 +113,18 @@ GM.RoundFunctions = {
 		SetGlobalInt( "dr_rounds_left", rounds )
 
 		if rounds <= 1 and not RTVoted and GetConVar("dr_default_vote"):GetBool() then
+			if cookie.GetNumber("dr_rounds") >= 1 then
+				CreateVote()
+				cookie.Set("dr_rounds", "0")
+				return
+			end
+			cookie.Set("dr_rounds", tostring(cookie.GetNumber("dr_rounds") + 1))
+
 			RTV.Start()
 			RTVoted = true
 		end
 
-		hook.Run("OnRoundEnd", rounds) -- rounds left
+		-- hook.Run("OnRoundEnd", rounds)
 	end,
 }
 
